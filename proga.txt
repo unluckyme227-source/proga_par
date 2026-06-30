@@ -406,3 +406,73 @@ public class Main {
         System.out.println("All threads finished");
     }
 }
+
+###########
+import java.io.*;
+import java.util.Scanner;
+import java.util.concurrent.*;
+
+public class FileProductCalculator {
+    
+    public static void main(String[] args) {
+        // Имена исходных файлов
+        String[] inputFiles = {"data1.txt", "data2.txt", "data3.txt"};
+        
+        // Создаем потоки для каждого файла
+        Thread[] threads = new Thread[inputFiles.length];
+        
+        for (int i = 0; i < inputFiles.length; i++) {
+            final String inputFile = inputFiles[i];
+            final String outputFile = inputFile + "_res";
+            
+            threads[i] = new Thread(() -> {
+                processFile(inputFile, outputFile);
+            });
+            threads[i].start();
+        }
+        
+        // Ждем завершения всех потоков
+        for (Thread thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        System.out.println("Все файлы обработаны!");
+    }
+    
+    private static void processFile(String inputFile, String outputFile) {
+        double product = 1.0;
+        boolean hasPositive = false;
+        
+        try (Scanner scanner = new Scanner(new File(inputFile));
+             PrintWriter writer = new PrintWriter(new File(outputFile))) {
+            
+            while (scanner.hasNextDouble()) {
+                double number = scanner.nextDouble();
+                if (number > 0) {
+                    product *= number;
+                    hasPositive = true;
+                    System.out.println(Thread.currentThread().getName() + 
+                                     ": умножил " + number);
+                }
+            }
+            
+            // Записываем результат
+            if (hasPositive) {
+                writer.println("Произведение положительных элементов: " + product);
+            } else {
+                writer.println("Положительных элементов не найдено");
+            }
+            
+            System.out.println(Thread.currentThread().getName() + 
+                             ": файл " + inputFile + " обработан");
+            
+        } catch (FileNotFoundException e) {
+            System.err.println(Thread.currentThread().getName() + 
+                             ": файл " + inputFile + " не найден");
+        }
+    }
+}
